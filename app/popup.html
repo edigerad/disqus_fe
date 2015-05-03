@@ -14,20 +14,75 @@
   <!-- endbuild -->
   </head>
   <body>
-
-
+    
   <!-- build:js scripts/vendor.js -->
   <!-- bower:js -->
   <script src="bower_components/jquery/dist/jquery.js"></script>
   <script src="bower_components/reactive/ractive.js"></script>
   <script src="bower_components/bootstrap/dist/js/bootstrap.js"></script>
+  <script src="bower_components/md5/src/md5.js"></script>
   <script src="bower_components/bootstrap-material-design/dist/js/material.js"></script>
   <script src="bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
   <!-- endbower -->
   <!-- endbuild -->
+  <div id="result"></div>
+    <div class="col-lg-1"></div>
+    <div class="col-lg-10" id="main_div">
+      <h1>SDU Disqus</h1>
 
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h2 class="panel-title">Enter your email & name</h2>
+        </div>
+        <div class="panel-body">
+          <div class="col-lg-10">
+            <input type="email" class="form-control" id="inputEmail" placeholder="Email" >
+            <input type="text" class="form-control" id="inputName" placeholder="Name" >
+            <button on-click='ok' class="btn btn-primary btn-sm">ok</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h3 class="panel-title"><strong>All comments</strong></h3>
+        </div>
+        <div class="panel-body">
+          <div class="col-lg-10">
+            <div class="list-group">
+              <div class="list-group-item">
+                <div class="row-picture">
+                <img class="circle" src="http://www.gravatar.com/avatar/{{ava}}" alt="icon">
+                  
+                </div>
+                <div class="row-content">
+                  <div class="least-content">01.05.2015</div>
+                  <h4 class="list-group-item-heading">Edige</h4>
+                  <p class="list-group-item-text">Like it</p>
+                </div>
+              </div>
+              <div class="list-group-separator"></div>
+            </div>
+            
+          </div>
+        </div>
+        <div class="panel-footer">
+          <div class="form-group">
+            <div class="input-group">
+              <input type="text" class="form-control"  placeholder="Comment">
+              <span class="input-group-btn">
+                <button on-click='add_comment' class="btn btn-primary btn-sm" id="add_comment">Add</button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-1"></div>
   <!-- build:js scripts/popup.js -->
   <script src="scripts/popup.js"></script>
   <!-- endbuild -->
+  
   </body>
+  
 </html>

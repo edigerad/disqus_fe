@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "SDU Disqus",
+    "description": "The name of the application"
+  },
+  "appDescription": {
+    "message": "Disqus any url with SDU",
+    "description": "The description of the application"
+  }
+}
