@@ -5,49 +5,15 @@
 chrome.runtime.onInstalled.addListener (details) ->
   console.log('previousVersion', details.previousVersion)
 
-dannye =
-  user_name:''
-  user_email:''
-  urls:
-    [
-      url:''
-      comments:
-        [
-          name:''
-          ava:''
-          email:''
-          comment:''
-          date:''
-        ]
-    ]
-                
-                  
-chrome.runtime.onInstalled.addListener (details) ->
-  console.log('previousVersion', details.previousVersion)
-  chrome.storage.local.set {'value': dannye}
+#Parsing Url to get hostname of url
+parseUrl = ( url = location.href ) ->
+  l = document.createElement "a"
+  l.href = url
+  return l
 
-update= =>
-  chrome.storage.local.get 'value',(result)->
-    result = result.value
-    chrome.tabs.getSelected null,(tab)->
-      
-      [d, other] = (tab.url).split '://'
-      [domain, oth] = other.split '/'
-      urlN = d + '://' + domain
-      console.log urlN
-      
-      flag = false
-      urls = result.urls
-      
-      for val in urls
-        if urlN == val.url
-          chrome.browserAction.setBadgeText {text:val.comments.length.toString()}
-          flag = true
-          break
-      if !flag
-        chrome.browserAction.setBadgeText {text:'0'}
-
-update()
-
+#If tab is changed we will need to know number of comments to new url and show it
 chrome.tabs.onActivated.addListener (activeInfo)->
-  update()
+  chrome.tabs.get activeInfo.tabId, (tab) ->
+    k = parseUrl tab.url 
+    console.log "ONLy #{k.hostname}"
+    Backend.getCount(k.hostname) 

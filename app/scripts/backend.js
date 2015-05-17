@@ -1,56 +1,67 @@
-'use strict';
+(function() {
+  'use strict';
+  var $this, module;
 
-# this script is supposed to have backend related code
+  module = typeof exports !== "undefined" && exports !== null ? exports : this;
 
-module = exports ? this
-urlBackend = 'http://localhost:8000/api/v1/comment/'
+  $this = {
+    getComments: function(url, callback, errback) {
+      $.getJSON('http://127.0.0.1:8000/api/v1/comment', function(data) {
+        var div, gravatar, html1, html2, html3, k, _i, _len, _ref, _results;
+        _ref = data.objects;
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          k = _ref[_i];
+          if (url === k.link) {
+            div = document.createElement('div');
+            gravatar = '<img src = https://s.gravatar.com/avatar/' + hex_md5(k.email) + '?s=28 />';
+            html1 = '<p>' + gravatar + " " + '<strong>' + k.author + '</strong></p>';
+            html2 = '<font>' + k.text + '</font>';
+            html3 = '<p class="text-right">' + k.pub_date + '</p>';
+            console.log(html1);
+            div.className = "comment-border";
+            div.innerHTML += html1;
+            div.innerHTML += html2;
+            div.innerHTML += html3;
+            _results.push(document.getElementById('comments').appendChild(div));
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      });
+    },
+    getCount: function(url, callback, errback) {
+      $.getJSON('http://127.0.0.1:8000/api/v1/comment', function(data) {
+        var k, q, _i, _len, _ref;
+        q = 0;
+        _ref = data.objects;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          k = _ref[_i];
+          if (url === k.link) {
+            q = q + 1;
+          }
+        }
+        return chrome.browserAction.setBadgeText({
+          text: q + ""
+        });
+      });
+    },
+    newComment: function(url, author, comment, email, callback, errback) {
+      var json, xhr;
+      xhr = new XMLHttpRequest();
+      json = JSON.stringify({
+        text: comment,
+        author: author,
+        link: url,
+        email: email
+      });
+      xhr.open("POST", 'http://127.0.0.1:8000/api/v1/comment/', true);
+      xhr.setRequestHeader('Content-type', 'application/json;');
+      return xhr.send(json);
+    }
+  };
 
-$this =
-  getComments: (url, callback, errback) ->
-    comments = document.getElementById('comments')
-    hr = new XMLHttpRequest
-    hr.open 'GET', urlBackend, true
-    hr.setRequestHeader 'Content-type', 'application/json', true
+  module.Backend = $this;
 
-    hr.onreadystatechange = ->
-      if hr.readyState == 4 and hr.status == 200
-        data = JSON.parse(hr.responseText)
-        for i in data.objects
-          if i.url == url
-            gravatar = '<img src = https://s.gravatar.com/avatar/' + hex_md5(i.email) + '?s=64 />'
-            tableComment = '<table>
-                              <tr><td>' + gravatar + '</td>
-                        
-                                <td><h4  style="margin-top:0px;">' + i.name + '</h4><h5>' + i.comment + '</h5></td>
-                            
-                              <td style="vertical-align:top; padding-left:120px;"><h6>' + (i.pub_date.substring 0, 10) + '</h6></td></tr></table>'
-            # append this new image to some div, or whatever
-                            
-            $('#comments').append tableComment
-      return
-
-    hr.send null
-    # callback();
-    # errback();
-  getCount: (url, callback, errback)->
-    hr = new XMLHttpRequest
-    hr.open 'GET', urlBackend, true
-    hr.setRequestHeader 'Content-type', 'application/json', true
-    total_count = 0
-    hr.onreadystatechange = ->
-      if hr.readyState == 4 and hr.status == 200
-        data = JSON.parse(hr.responseText)
-        for i in data.objects
-          if i.url == url
-            total_count++
-            console.log total_count
-      return 
-    total_count
-
-    # console.log total_count
-    hr.send null
-    
-  newComment: (url, name, email, comment, callback, errback) ->
-    # console.log('Popup 3')
-
-module.Backend = $this
+}).call(this);

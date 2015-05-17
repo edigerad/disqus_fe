@@ -1,111 +1,95 @@
 'use strict';
 
 # this script is used in popup.html
+currentUrl = ""
 
-comments = []
+Stat =
+	data: {}
+	cur: null
 
-ractive = new Ractive
-     el : '#result'
-     template : '#ractive_id'
-     data :
-         user_name: ''
-         user_email: ''
-         comments:comments
+# If we have data in local Storage we will take it
+chrome.storage.sync.get 'disqus.data', (item) ->
+	if item['disqus.data']
+		Stat.data = JSON.parse(item['disqus.data'])
+	
+# Save Information in local storage
+saveInfo = (url) ->
+	if Stat.cur
+		lst = Stat.data[Stat.cur]
+	Stat.cur = url
+	lst = Stat.data[url] or []
+	name = document.getElementById('name').value
+	email = document.getElementById('email').value		
+	lst.push(name)
+	lst.push(email)
+	Stat.data[url] = lst
+	chrome.storage.sync.set {'disqus.data': JSON.stringify(Stat.data)}
 
-ractive.set 'array_length',0
-document.getElementById('pager').style.display = 'none'
+#There we check is email validated
+validateEmail = (email) ->
+	re = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i
+	re.test email
 
-ractive.on 'ok', =>
-  ractive.set 'user_name',ractive.get 'user_name'
-  ractive.set 'user_email',ractive.get 'user_email'
+#There we add new comment, and using post method send query to backend
+add = () ->
+	console.log('\'Allo \'Allo! Popup')
+	new_comment = document.getElementById('comment').value
+	name = document.getElementById('name').value
+	email = document.getElementById('email').value
+	if (new_comment != "")
+		if (name == "" || name == null || email == null || email == "" || !validateEmail(email))
+			alert("Please Fill Credentials")
+		else		
+			saveInfo(currentUrl.hostname)
+			today = new Date()
+			dd = today.getDate() - 1
+			mm = today.getMonth() + 1
+			yyyy = today.getFullYear()
 
-  chrome.storage.local.get 'value',(result) ->
-    result = result.value
-    result.user_name = ractive.get 'user_name'
-    result.user_email = ractive.get 'user_email'
-    chrome.storage.local.set {'value':result}
-
-ractive.on 'add_comment', =>
-  date = new Date()
-  
-  day = date.getDay()
-  day = '0' + day if day <= 9
-  
-  month = date.getMonth()
-  month = '0' + month if month <=9
-
-  if (ractive.get 'user_name') == '' || (ractive.get 'email') == ''
-  	alert('enter name and surname to add comment')
-  	return
-
-  ractive.set 'ava',(md5 (ractive.get 'user_email'))
-  comments = ractive.get 'comments'
-  comments.push({
-           name:ractive.get 'user_name'
-           ava:ractive.get 'ava'
-           email:ractive.get 'user_email'
-           comment:ractive.get 'comment'
-           date:day+'.'+month+'.'+date.getFullYear()
-       })
-  ractive.set 'comments',comments
-  ractive.set 'array_length',comments.length
-  ractive.set 'comment',''
-  chrome.browserAction.setBadgeText {text: comments.length.toString()}
-  document.getElementById('pager').style.display = 'block' if comments.length > 1
-
-  chrome.storage.local.get 'value',(result) ->
-    result = result.value
-    chrome.tabs.getSelected null,(tab)->
-      
-
-
-      [d, other] = (tab.url).split '://'
-      [domain, oth] = other.split '/'
-      urlN = d + '://' + domain
-      
-      flag = false
-      urls = result.urls
-      for val in urls
-        if urlN == val.url
-          result.urls[_i].comments = ractive.get 'comments'
-          chrome.storage.local.set {'value':result}
-          chrome.browserAction.setBadgeText {text: val.comments.length.toString()}
-          ractive.set 'array_length',val.comments.length.toString()
-          flag = true
-          break
-      if !flag
-        urls.push({
-              url:urlN
-              comments:comments
-          });
-        dannye =
-          user_name:ractive.get 'user_name'
-          user_email:ractive.get 'user_email'
-          urls:urls
-            
-        chrome.storage.local.set {'value':dannye}
+			if(dd<10) 
+			    dd='0'+dd
+			if(mm<10)
+			    mm='0'+mm
+			today = yyyy + '-' + mm + '-' + dd
+			
+			div = document.createElement('div')
+			gravatar = '<img src = https://s.gravatar.com/avatar/' + hex_md5(email) + '?s=28 />'		
+			html1 = '<p>' + gravatar + '<strong>' + name + '</strong></p>'
+			html2 = '<font>' + new_comment + '</font>'
+			html3 = '<p class="text-right">' + today + '</p>'					
+			console.log(html1)
+			div.className="comment-border"				
+			div.innerHTML += html1
+			div.innerHTML += html2
+			div.innerHTML += html3								
+			document.getElementById('comments').appendChild(div)								
+			Backend.newComment(currentUrl.hostname, name, new_comment,email)
+	else
+		alert('Please Fill Comment')
 
 
-chrome.storage.local.get 'value',(result) ->
-  result = result.value
-  ractive.set 'user_name',result.user_name
-  ractive.set 'user_email',result.user_email
-  ractive.set 'array_length',(ractive.get 'comments').length
-  
-  chrome.tabs.getSelected null,(tab)->
-    [d, other] = (tab.url).split '://'
-    [domain, oth] = other.split '/'
-    urlN = d + '://' + domain
-    
-    flag = false
-    urls = result.urls
+console.log('Popup');
 
-    for val in urls
-      if urlN == val.url
-        ractive.set 'comments',result.urls[_i].comments
-        chrome.browserAction.setBadgeText {text:val.comments.length.toString()}
-        ractive.set 'array_length',(result.urls[_i].comments).length
-        flag = true
-        break
-    if !flag
-      chrome.browserAction.setBadgeText {text:'0'}
+#Parsing Url to get hostname of url
+parseUrl = ( url = location.href ) ->
+  l = document.createElement "a"
+  l.href = url
+  return l
+
+#Listen when Send Button pressed
+window.onload = () ->
+	document.getElementById('add').onclick = add
+
+#There I take url of current tab and if value in db is exists put it into my variable
+chrome.tabs.query({active: true, windowId: window.id},(tab)->
+	currentUrl = parseUrl(tab[0].url)
+	console.log("Query = " + currentUrl.hostname)
+	lst = Stat.data[currentUrl.hostname]
+	if(lst)
+		document.getElementById('name').value = lst[lst.length - 2]
+		document.getElementById('email').value = lst[lst.length - 1]		
+	Backend.getComments(currentUrl.hostname)
+)
+
+
+
